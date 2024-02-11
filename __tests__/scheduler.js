@@ -4,18 +4,13 @@ const db = require("../models/index");
 const app = require("../app");
 var cheerio = require("cheerio");
 
-let server, agent;
-function extractCsrfToken(res){
-  var $= cheerio.load(res.text);
-  return $("[name=_csrf]").val();
-}
+
 const login =async (agent,username,password)=>{
   let res=await agent.get("/login");
-  let csrfToken=extractCsrfToken(res);
+
   await agent.post("/session").send({
     email:username,
-    password:password,
-    _csrf:csrfToken,
+    password:password
   });
 };
 describe("Sports-Scheduler Application", function () {
@@ -40,26 +35,24 @@ describe("Sports-Scheduler Application", function () {
 
   test("To check the admin signup function", async ()=>{
     let res=await agent.get("/signup/admin");
-    const csrfToken=extractCsrfToken(res);
+   
     res=await agent.post("/adminusers").send({
       firstName:"Test",
       lastName: "User A",
       email: "usera@test.com",
-      password:"helloworld",
-      _csrf: csrfToken,
+      password:"helloworld"
     });
     expect(res.statusCode).toBe(302);
   });
 
   test("To check the player signup function", async ()=>{
     let res=await agent.get("/signup/player");
-    const csrfToken=extractCsrfToken(res);
+  
     res=await agent.post("/playingusers").send({
       firstName:"Test",
       lastName: "User A",
       email: "usera@test.com",
-      password:"helloworld",
-      _csrf: csrfToken,
+      password:"helloworld"
     });
     expect(res.statusCode).toBe(302);
   });

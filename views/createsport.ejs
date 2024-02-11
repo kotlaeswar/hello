@@ -3,32 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
- 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="./css/styles.css" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    
     <title><%=title%></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f3f4f6;
+        }
+        .container {
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input[type="text"] {
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        button[type="submit"] {
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            width: 100%;
+        }
+        button[type="submit"]:hover {
+            background-color: #218838;
+        }
+        .notifications {
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
-    <div class="grid grid-cols-6">
-        <div class="col-start-3 col-span-2">
-            <h1 class="p-2 text-4xl">Create a new sport</h1>
-            <form action="/addsport" method="post">
-            
-                <div class="flex flex-col gap-5 py-10 p-2">
-                    <div class="flex-auto">
-                        <label>What is the name of the sport?</label>
-                        <input type="text" name="title" class="border border-gray-300 rounded text-gray-900 w-full p-2 text-sm leading-4"/>
-                    </div>
-                    <div class="flex-auto">
-                        <button type="submit" class="bg-green-600 text-white px-5 py-1.5 rounded font-medium mr-2 mb-2">Add</button>
-                    </div>
+    <div class="container">
+        <h1>Create a new sport</h1>
+        <form action="/addsport" method="post">
+            <div class="flex flex-col gap-5">
+                <div class="flex-auto">
+                    <label>What is the name of the sport?</label>
+                    <input type="text" name="title" required/>
                 </div>
-            </form>
-            <div>
+                <div class="flex-auto">
+                    <button type="submit">Add</button>
+                </div>
             </div>
-            <%-include("notifications.ejs")%>
+        </form>
+        <div class="notifications">
+            <% include("notifications.ejs") %>
         </div>
     </div>
 </body>

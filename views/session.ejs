@@ -11,7 +11,6 @@
     <meta name="sportowner" content="<%=sportowner%>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="./css/styles.css" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
     <script>
         var role=document.querySelector('meta[name="role"]').getAttribute("content");
         var players=document.querySelector('meta[name="players"]').getAttribute("content");
@@ -119,6 +118,71 @@
         }
     </script>
     <title><%=title%></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+        }
+        .col-start-3 {
+            grid-column-start: 3;
+        }
+        .col-span-2 {
+            grid-column-end: span 2;
+        }
+        .container {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        .underline {
+            text-decoration: underline;
+        }
+        .Todo-Item {
+            margin-bottom: 10px;
+        }
+        .Todo-Item .flex {
+            align-items: center;
+        }
+        .Todo-Item .flex .trash-icon {
+            margin-left: 10px;
+            display: none;
+        }
+        .Todo-Item:hover .trash-icon {
+            display: inline-block;
+        }
+        .text-green-600 {
+            color: #198754;
+        }
+        .text-green-600:hover {
+            text-decoration: underline;
+        }
+        .p-2 {
+            padding: 8px;
+        }
+        .text-4xl {
+            font-size: 2.25rem;
+        }
+        .absolute {
+            position: absolute;
+        }
+    
+    </style>
 </head>
 <body onload="adminoptions()">
     <div class="grid grid-cols-6">
@@ -126,12 +190,12 @@
             <div class="inline-flex">
                 <h1 class="p-2 text-4xl" id="name"><%=owner%>'s Session</h1>
                 <div class="p-4 absolute start-2/3" id="creator">
-                    <a class="text-green-600 p-4 underline cursor-pointer" onclick="deleteSession(`<%=session.id%>`)">Delete Session</a>
-                    <a href="/session/<%=session.id%>/edit" class="text-green-600 p-4 underline cursor-pointer">Edit Session</a>
-                </div>
-            </div>
+                    <a class="text-green-600 p-4 underline cursor-pointer" onclick="deleteSession(`<%=session.id%>`)">Delete Session</a><br><br>
+                    <a href="/session/<%=session.id%>/edit" class="text-green-600 p-4 underline cursor-pointer">Edit Session</a><br><br>
+                </div><br><br>
+            </div><br><br>
             <div>
-                <ul class="list-none ml-2">
+                <ul class="list-none ml-2"><br><br>
                     <li>
                         Location: <%=session.location%>
                     </li>
@@ -148,10 +212,10 @@
                     <li class="Todo-Item">
                         <div class="flex w-fit my-2 px-2 py-1 items-center hover:bg-purple-50 rounded">
                             <label class="ml-2 text-sm text-gray-600 cursor-pointer"><%= players[i] %></label>
-                            <a href="#" class="ml-2 hidden trash-icon" onclick="removeplayer( <%=session.id%>,<%= playerid[i] %>,<%=playerid%>)" id="admindelete">
+                            <a href="#" class="ml-2 hidden trash-icon" onclick="removeplayer(<%=session.id%>,<%= playerid[i] %>,<%=playerid%>)" id="admindelete">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                                  </svg>                      
+                                </svg>                      
                             </a>
                         </div>
                     </li>
