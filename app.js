@@ -3,10 +3,10 @@ const app = express()
 const { Sports, User, Sportname } = require('./models')
 const bodyParser = require('body-parser')
 const path = require('path')
-
 const cookieParser = require('cookie-parser')
 const passport = require('passport')
 const connectEnsureLogin = require('connect-ensure-login')
+const { Op } = require('sequelize')
 const session = require('express-session')
 const LocalStrategy = require('passport-local')
 const bcrypt = require('bcrypt')
@@ -14,7 +14,7 @@ const flash = require('connect-flash')
 const { request } = require('http')
 const { resourceUsage } = require('process')
 app.use(bodyParser.json())
-app.use(express.urlencoded({ extended: false }))
+app.use(express.urlencoded({ extended: true }))
 app.use(cookieParser('todo application'))
 
 app.set('view engine', 'ejs')
@@ -24,15 +24,6 @@ const saltRounds = 10
 const formattedDate = (d) => {
   return d.toISOString().split('T')[0]
 }
-
-const dateToday = new Date()
-const today = formattedDate(dateToday)
-const yesterday = formattedDate(
-  new Date(new Date().setDate(dateToday.getDate() - 1))
-)
-const tomorrow = formattedDate(
-  new Date(new Date().setDate(dateToday.getDate() + 1))
-)
 
 app.use(express.static(path.join(__dirname, 'public')))
 app.set('views', path.join(__dirname, 'views'))
@@ -53,23 +44,32 @@ app.use(function (request, response, next) {
 app.use(passport.initialize())
 app.use(passport.session())
 
-app.get('/', async (request, response) => {
-  response.render('index', {
-    title: 'Sports Scheduler'
-
-  })
+app.get('/', async (req, res) => {
+  res.render('index', { title: 'Sports Scheduler' })
 })
 
 app.get('/signup', (request, response) => {
   response.render('signup', { title: 'Signup' })
 })
 
-app.get('/signup/admin', (request, response) => {
-  response.render('admin-signup', { title: 'Admin-Signup' })
-})
+// app.get('/signup/admin', (request, response) => {
+//   response.render('admin-signup', { title: 'Admin-Signup' })
+// })
 
-app.get('/signup/player', (request, response) => {
-  response.render('player-signup', { title: 'Player signup' })
+// app.get('/signup/player', (request, response) => {
+//   response.render('player-signup', { title: 'Player signup' })
+// })
+
+app.get('/signup/:role', (req, res) => {
+  const { role } = req.params
+  if (role === 'admin') {
+    res.render('admin-signup', { title: 'Admin-Signup' })
+  } else if (role === 'player') {
+    res.render('player-signup', { title: 'Player Signup' })
+  } else {
+    // Handle invalid role
+    res.redirect('/')
+  }
 })
 
 app.post('/adminusers', async (request, response) => {
@@ -144,50 +144,34 @@ app.post('/playingusers', async (request, response) => {
   }
 })
 
-passport.serializeUser((user, done) => {
-  console.log('Serializing user in session', user.id)
-  done(null, user.id)
-})
-
-passport.deserializeUser((id, done) => {
-  User.findByPk(id).then(user => {
+passport.serializeUser((user, done) => done(null, user.id))
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await User.findByPk(id)
     done(null, user)
-  }).catch(error => {
+  } catch {
     done(error, null)
-  })
+  }
 })
 
-passport.use('local', new LocalStrategy({
-  usernameField: 'email',
-  passwordField: 'password'
-}, (username, password, done) => {
-  User.findOne({ where: { email: username } })
-    .then(async (user) => {
-      const result = await bcrypt.compare(password, user.password)
-      if (result) {
-        return done(null, user)
-      } else {
-        return done(null, false, { message: 'Invalid Password' })
-      }
-    }).catch((error) => {
-      return done(null, false, { message: 'User does not exist' })
-    })
-}))
-
-function requireAdmin (req, res, next) {
-  if (req.user && req.user.role === 'admin') {
-    return next()
-  } else {
-    res.status(401).json({ message: 'Unauthorized user.' })
-  }
-}
+passport.use('local', new LocalStrategy({ usernameField: 'email', passwordField: 'password' },
+  async (username, password, done) => {
+    try {
+      const user = await User.findOne({ where: { email: username } })
+      const result = user && await bcrypt.compare(password, user.password)
+      return result ? done(null, user) : done(null, false, { message: 'Invalid Password' })
+    } catch {
+      done(null, false, { message: 'User does not exist' })
+    }
+  })
+)
 
 function requirePlayer (req, res, next) {
-  if (req.user && req.user.role === 'user') {
-    return next()
-  } else {
-    res.status(401).json({ message: 'Unauthorized user.' })
-  }
+  req.user && req.user.role === 'user' ? next() : res.status(401).json({ message: 'Unauthorized user.' })
+}
+
+function requireAdmin (req, res, next) {
+  req.user && req.user.role === 'admin' ? next() : res.status(401).json({ message: 'Unauthorized user.' })
 }
 
 app.get('/signout', connectEnsureLogin.ensureLoggedIn(), (request, response, next) => {
@@ -207,46 +191,27 @@ app.post('/playersession', passport.authenticate('local', { failureRedirect: '/s
   response.redirect('/home')
 })
 
-app.get('/home', connectEnsureLogin.ensureLoggedIn(), async (request, response) => {
-  console.log(request.user.id)
-  const acc = await User.findByPk(request.user.id)
-  const sessions = acc.sessions
-  const sessionid = sessions == null ? [] : sessions.split(',')
-  const usersessions = []
-  for (let i = 0; i < sessionid.length; i++) {
-    if (Number(sessionid[i]).toString() != 'NaN' && sessionid[i] != '' && sessionid[i] != null) {
-      const sess = await Sports.findOne({ where: { id: sessionid[i] } })
-      if (sess) {
-        const t = new Date().toISOString().split('T')
-        const date = t[0]
-        console.log(date)
-        const time = t[1].substring(0, 5)
-        const gtime = sess.time
-        if (sess.date == date) {
-          if (gtime > time) {
-            usersessions.push(sess)
-          }
-        } else if (sess.date > date) {
-          usersessions.push(sess)
-        }
-      }
+app.get('/home', connectEnsureLogin.ensureLoggedIn(), async (req, res) => {
+  const acc = await User.findByPk(req.user.id)
+  const sessionIds = (acc.sessions || '').split(',').filter(Boolean)
+  const currentTime = new Date().toISOString().split('T').join(' ').substring(0, 16)
+
+  const usersessions = await Sports.findAll({
+    where: {
+      id: sessionIds,
+      date: { [Op.gte]: currentTime.substring(0, 10) },
+      time: { [Op.gt]: currentTime.substring(11) }
     }
-  }
+  })
+
   const sportslist = await Sportname.findAll()
   const role = acc.role
-  const userName = acc.firstName + ' ' + acc.lastName
-  if (request.accepts('html')) {
-    response.render('home', {
-      userName,
-      role,
-      sportslist,
-      usersessions
+  const userName = `${acc.firstName} ${acc.lastName}`
 
-    })
+  if (req.accepts('html')) {
+    res.render('home', { userName, role, sportslist, usersessions })
   } else {
-    response.json({
-      userName
-    })
+    res.json({ userName })
   }
 })
 
@@ -324,8 +289,6 @@ app.post('/addsport', requireAdmin, async (request, response) => {
     response.redirect('/home')
   }
 })
-
-
 app.get('/sport/:sport', connectEnsureLogin.ensureLoggedIn(), async (request, response) => {
   const acc = await User.findByPk(request.user.id)
   const role = acc.role
@@ -333,19 +296,15 @@ app.get('/sport/:sport', connectEnsureLogin.ensureLoggedIn(), async (request, re
   const sessions = await Sports.findAll({ where: { title: sport } })
 
   const upsessions = []
+  const currentTime = new Date()
+
   for (let i = 0; i < sessions.length; i++) {
-    const t = new Date().toISOString().split('T')
-    const date = t[0]
-    const time = t[1].substring(0, 5)
-    const gtime = sessions[i].time
-    if (sessions[i].date == date) {
-      if (gtime > time) {
-        upsessions.push(sessions[i])
-      }
-    } else if (sessions[i].date > date) {
+    const sessionTime = new Date(sessions[i].date + 'T' + sessions[i].time)
+    if (sessionTime > currentTime) {
       upsessions.push(sessions[i])
     }
   }
+
   try {
     const all = await Sportname.findAll({ where: { title: sport } })
     const sports = all[0]
@@ -490,8 +449,6 @@ app.get('/session/:id/edit', requireAdmin, (request, response) => {
   const id = request.params.id
   response.render('editsession', { title: 'Update Session', id })
 })
-
-
 
 app.get('/changepassword', connectEnsureLogin.ensureLoggedIn(), (request, response) => {
   response.render('changepassword')
