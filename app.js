@@ -174,21 +174,6 @@ passport.use('local', new LocalStrategy({
     })
 }))
 
-// passport.use('local', new LocalStrategy(
-//   { usernameField: 'email' },
-//   function(email, password, done) {
-//     User.findOne({ email: email }, function(err, user) {
-//       if (err) { return done(err); }
-
-//       if (!user || !user.validPassword(password)) {
-//         return done(null, false, { message: 'Incorrect email or password.' });
-//       }
-
-//       return done(null, user);
-//     });
-//   }
-// ));
-
 function requireAdmin (req, res, next) {
   if (req.user && req.user.role === 'admin') {
     return next()
@@ -340,44 +325,13 @@ app.post('/addsport', requireAdmin, async (request, response) => {
   }
 })
 
-// app.get('/sport/:sport', connectEnsureLogin.ensureLoggedIn(), async (request, response) => {
-//   const acc = await User.findByPk(request.user.id)
-//   const role = acc.role
-//   const sport = request.params.sport
-//   const sessions = await Sports.findAll({ where: { title: sport } })
-//   console.log('Sessions:', sessions)
-//   const upsessions = []
-
-//   for (let i = 0; i < sessions.length; i++) {
-//     const t = new Date().toISOString().split('T')
-//     const date = t[0]
-//     const time = t[1].substring(0, 5)
-//     const gtime = sessions[i].time
-//     if (sessions[i].date == date) {
-//       if (gtime > time) {
-//         upsessions.push(sessions[i])
-//       }
-//     } else if (sessions[i].date > date) {
-//       upsessions.push(sessions[i])
-//     }
-//   }
-//   try {
-//     const all = await Sportname.findAll({ where: { title: sport } })
-//     console.log(all)
-//     const sports = all[0]
-//     console.log('this is data', upsessions)
-//     response.render('sport', { sport, role, ses: upsessions, userid: request.user.id, owner: sports.userId, upsessions })
-//   } catch (error) {
-//     console.log(error)
-//   }
-// })
 
 app.get('/sport/:sport', connectEnsureLogin.ensureLoggedIn(), async (request, response) => {
   const acc = await User.findByPk(request.user.id)
   const role = acc.role
   const sport = request.params.sport
   const sessions = await Sports.findAll({ where: { title: sport } })
-  
+
   const upsessions = []
   for (let i = 0; i < sessions.length; i++) {
     const t = new Date().toISOString().split('T')
@@ -396,13 +350,10 @@ app.get('/sport/:sport', connectEnsureLogin.ensureLoggedIn(), async (request, re
     const all = await Sportname.findAll({ where: { title: sport } })
     const sports = all[0]
     response.render('sport', { sport, role, ses: upsessions, userid: request.user.id, owner: sports.userId })
-
-  }catch (error) {
+  } catch (error) {
     console.log(error)
   }
 })
-
-
 
 app.get('/createsession/:sport', connectEnsureLogin.ensureLoggedIn(), async (request, response) => {
   const sport = request.params.sport
@@ -540,51 +491,21 @@ app.get('/session/:id/edit', requireAdmin, (request, response) => {
   response.render('editsession', { title: 'Update Session', id })
 })
 
-app.get('/session/:id/updatesession', requireAdmin, async (request, response) => {
-  const date = request.body.date
-  const time = request.body.time
-  const location = request.body.location
-  let players = request.body.players
-  const addtional = Number(request.body.additional)
-  const acc = await User.findByPk(request.user.id)
-  const username = acc.email
-  players = username + ',' + players
-  const playerlist = players.split(',')
-  let playerlist1 = ''
-  for (let i = 0; i < playerlist.length; i++) {
-    const player = await User.findOne({ where: { email: playerlist[i] } })
-    if (player) {
-      playerlist1 = playerlist1 + player.id.toString() + ','
-    }
-  }
-  if (location === '' || location === undefined) {
-    request.flash('error', 'The location of the session cannot be left blank')
-    response.redirect(`/session/${request.params.id}/edit`)
-  }
-  if (addtional === '' || addtional === undefined) {
-    if (players === '' || players === undefined) {
-      request.flash('error', 'A session must have atleast two players')
-      response.redirect(`/session/${request.params.id}/edit`)
-    }
-  }
-  try {
-    const session = await Sports.update({ date, time, location, players: playerlist1, additional: addtional })
-    console.log(addtional)
-    let usersess = acc.sessions
-    usersess += ',' + session.id
-    await acc.update({ sessions: usersess })
-    response.redirect('/home')
-  } catch (error) {
-    console.log(error)
-  }
-})
+
 
 app.get('/changepassword', connectEnsureLogin.ensureLoggedIn(), (request, response) => {
   response.render('changepassword')
 })
 
 app.post('/updatepassword', connectEnsureLogin.ensureLoggedIn(), async (request, response) => {
-  const user = await User.findOne({ where: { id: request.user.id } })
+  const user = await User.findOne(
+    {
+      where:
+       {
+         id: request.user.id
+       }
+    }
+  )
   const newhashedpwd = await bcrypt.hash(request.body.newpass, saltRounds)
   if (request.body.newpass == request.body.renewpass) {
     await user.update({ password: newhashedpwd })
