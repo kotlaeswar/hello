@@ -1,7 +1,7 @@
-'use strict';
+'use strict'
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface, Sequelize) {
+  async up (queryInterface, Sequelize) {
     await queryInterface.createTable('Sportnames', {
       id: {
         allowNull: false,
@@ -11,22 +11,22 @@ module.exports = {
       },
       title: {
         type: Sequelize.STRING,
-        unique:true,
+        unique: true
       },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE
       },
       players: {
-        type: Sequelize.STRING  // Add this column definition
+        type: Sequelize.STRING // Add this column definition
       },
       updatedAt: {
         allowNull: false,
         type: Sequelize.DATE
       }
-    });
+    })
   },
-  async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('Sportnames');
+  async down (queryInterface, Sequelize) {
+    await queryInterface.dropTable('Sportnames')
   }
-};
+}

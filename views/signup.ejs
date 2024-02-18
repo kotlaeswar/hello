@@ -9,6 +9,52 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <title><%= title %></title>
 </head>
+<style>
+    /* styles.css */
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f8f8f8;
+    margin: 0;
+    padding: 0;
+}
+
+.grid {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.col-start-3 {
+    text-align: center;
+}
+
+.card {
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+a {
+    color: #1a202c;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+a:hover {
+    color: #2d3748;
+    cursor: pointer;
+}
+
+</style>
 <body>
     <div class="grid grid-cols-6">
         <div class="col-start-3 col-span-2">

@@ -158,20 +158,31 @@ passport.use('local', new LocalStrategy({ usernameField: 'email', passwordField:
   async (username, password, done) => {
     try {
       const user = await User.findOne({ where: { email: username } })
-      const result = user && await bcrypt.compare(password, user.password)
+      if (!user) {
+        return done(null, false, { message: 'User does not exist' })
+      }
+      const result = await bcrypt.compare(password, user.password)
       return result ? done(null, user) : done(null, false, { message: 'Invalid Password' })
-    } catch {
-      done(null, false, { message: 'User does not exist' })
+    } catch (error) {
+      return done(error)
     }
   })
 )
 
-function requirePlayer (req, res, next) {
-  req.user && req.user.role === 'user' ? next() : res.status(401).json({ message: 'Unauthorized user.' })
-}
-
 function requireAdmin (req, res, next) {
   req.user && req.user.role === 'admin' ? next() : res.status(401).json({ message: 'Unauthorized user.' })
+}
+
+function requirePlayer (req, res, next) {
+  try {
+    if (req.isAuthenticated() && req.user.role === 'user') {
+      return next()
+    } else {
+      throw new Error('Unauthorized user.')
+    }
+  } catch (error) {
+    res.status(401).json({ message: error.message })
+  }
 }
 
 app.get('/signout', connectEnsureLogin.ensureLoggedIn(), (request, response, next) => {
@@ -203,6 +214,8 @@ app.get('/home', connectEnsureLogin.ensureLoggedIn(), async (req, res) => {
       time: { [Op.gt]: currentTime.substring(11) }
     }
   })
+
+  console.log('User sessions:', usersessions)
 
   const sportslist = await Sportname.findAll()
   const role = acc.role
@@ -397,20 +410,19 @@ app.delete('/session/:id', connectEnsureLogin.ensureLoggedIn(), async (request, 
 
 app.delete('/sport/:sport', connectEnsureLogin.ensureLoggedIn(), async (request, response) => {
   try {
-    const sport = await Sportname.findOne({ where: { title: request.params.sport } });
+    const sport = await Sportname.findOne({ where: { title: request.params.sport } })
     if (!sport || sport.userId !== request.user.id) {
-      request.flash('error', 'You are not authorized to delete this sport');
-      return response.redirect(`/sport/${request.params.sport}`);
+      request.flash('error', 'You are not authorized to delete this sport')
+      return response.redirect(`/sport/${request.params.sport}`)
     }
 
-    await Sportname.destroy({ where: { title: request.params.sport } });
-    return response.json({ Success: true });
+    await Sportname.destroy({ where: { title: request.params.sport } })
+    return response.json({ Success: true })
   } catch (error) {
-    console.log(error);
-    return response.status(422).json({ error: 'Failed to delete sport' });
+    console.log(error)
+    return response.status(422).json({ error: 'Failed to delete sport' })
   }
-});
-
+})
 
 app.put('/admin/session/:id', requireAdmin, async (request, response) => {
   try {
@@ -456,21 +468,20 @@ app.get('/updatepassword', connectEnsureLogin.ensureLoggedIn(), (request, respon
 })
 
 app.post('/updatepassword', connectEnsureLogin.ensureLoggedIn(), async (request, response) => {
-  const newPassword = request.body.newpass;
-  const confirmPassword = request.body.renewpass;
+  const newPassword = request.body.newpass
+  const confirmPassword = request.body.renewpass
 
   if (newPassword !== confirmPassword) {
-    request.flash('error', 'Passwords do not match');
-    return response.redirect('/changepassword');
+    request.flash('error', 'Passwords do not match')
+    return response.redirect('/changepassword')
   }
 
-  const newhashedpwd = await bcrypt.hash(newPassword, saltRounds);
-  await request.user.update({ password: newhashedpwd });
+  const newhashedpwd = await bcrypt.hash(newPassword, saltRounds)
+  await request.user.update({ password: newhashedpwd })
 
-  request.flash('error', 'Your password has changed');
-  return response.redirect('/home');
-});
-
+  request.flash('error', 'Your password has changed')
+  return response.redirect('/home')
+})
 
 app.get('/login', (request, response) => {
   response.redirect('/signin')
