@@ -396,20 +396,21 @@ app.delete('/session/:id', connectEnsureLogin.ensureLoggedIn(), async (request, 
 })
 
 app.delete('/sport/:sport', connectEnsureLogin.ensureLoggedIn(), async (request, response) => {
-  const sport = await Sportname.findOne({ where: { title: request.params.sport } })
-  if (sport.userId != request.user.id) {
-    request.flash('error', 'You are not authorized to delete this session')
-    return response.redirect(`/sport/${request.params.sport}`)
-  }
   try {
-    await Sports.destroy({ where: { title: request.params.sport } })
-    await Sportname.destroy({ where: { title: request.params.sport } })
-    return response.json({ Success: true })
+    const sport = await Sportname.findOne({ where: { title: request.params.sport } });
+    if (!sport || sport.userId !== request.user.id) {
+      request.flash('error', 'You are not authorized to delete this sport');
+      return response.redirect(`/sport/${request.params.sport}`);
+    }
+
+    await Sportname.destroy({ where: { title: request.params.sport } });
+    return response.json({ Success: true });
   } catch (error) {
-    console.log(error)
-    return response.status(422).json(error)
+    console.log(error);
+    return response.status(422).json({ error: 'Failed to delete sport' });
   }
-})
+});
+
 
 app.put('/admin/session/:id', requireAdmin, async (request, response) => {
   try {
@@ -450,29 +451,26 @@ app.get('/session/:id/edit', requireAdmin, (request, response) => {
   response.render('editsession', { title: 'Update Session', id })
 })
 
-app.get('/changepassword', connectEnsureLogin.ensureLoggedIn(), (request, response) => {
-  response.render('changepassword')
+app.get('/updatepassword', connectEnsureLogin.ensureLoggedIn(), (request, response) => {
+  res.render('changepassword')
 })
 
 app.post('/updatepassword', connectEnsureLogin.ensureLoggedIn(), async (request, response) => {
-  const user = await User.findOne(
-    {
-      where:
-       {
-         id: request.user.id
-       }
-    }
-  )
-  const newhashedpwd = await bcrypt.hash(request.body.newpass, saltRounds)
-  if (request.body.newpass == request.body.renewpass) {
-    await user.update({ password: newhashedpwd })
-    request.flash('error', 'Your password has changed')
-    return response.redirect('/home')
-  } else {
-    request.flash('error', 'Passwords do not match')
-    response.redirect('/changepassword')
+  const newPassword = request.body.newpass;
+  const confirmPassword = request.body.renewpass;
+
+  if (newPassword !== confirmPassword) {
+    request.flash('error', 'Passwords do not match');
+    return response.redirect('/changepassword');
   }
-})
+
+  const newhashedpwd = await bcrypt.hash(newPassword, saltRounds);
+  await request.user.update({ password: newhashedpwd });
+
+  request.flash('error', 'Your password has changed');
+  return response.redirect('/home');
+});
+
 
 app.get('/login', (request, response) => {
   response.redirect('/signin')
