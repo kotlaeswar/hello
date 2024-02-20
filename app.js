@@ -206,6 +206,10 @@ app.get('/home', connectEnsureLogin.ensureLoggedIn(), async (req, res) => {
   const acc = await User.findByPk(req.user.id)
   const sessionIds = (acc.sessions || '').split(',').filter(Boolean)
   const currentTime = new Date().toISOString().split('T').join(' ').substring(0, 16)
+  
+  console.log('User role:', acc.role);
+  console.log('Session IDs:', sessionIds);
+  console.log('Current time:', currentTime);
 
   const usersessions = await Sports.findAll({
     where: {
